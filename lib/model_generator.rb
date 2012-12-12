@@ -1,4 +1,4 @@
-# Sequel Basic Scafolding Model Generator for MySQL 
+# Sequel Basic Scafolding Model Generator for MySQL
 # Requires sequel-3.34.0 and above.
 #
 # This routine takes all the table of a database, en generates all Sequel models for Ramaze
@@ -6,7 +6,7 @@
 # - A header that reminds you the table structure
 # - the plugin list you wrote in 'plugin_to_add' array
 # - The Sequel referential inegrity : one_to_many, many_to_one
-# - A "Validate" method that checks not nullable columnns and unique columns
+# - A "Validate" method that checks not nullable columnns and unique columns, if they have no default value
 # - Generates init.rb to be include in the project
 #
 # Note : db_connect.rb should already exists. Create it using Rake
@@ -16,14 +16,18 @@
 #
 # StackOverflow question : http://stackoverflow.com/questions/10123818/does-a-sequel-models-generator-exists
 # Thanks to Leucos : https://github.com/leucos
-# Organisation : https://github.com/Erasme 
+# Organisation : https://github.com/Erasme
 
 require 'sequel'
 
-require_relative '../model/db_connect'
+# Name of included file for db connection string
+db_connect = '../config/db'
+
+require_relative db_connect
 
 # Target dir
 @model_dir_target = "../model"
+
 
 # List of plugins to add to the model
 plugin_to_add = [
@@ -155,7 +159,7 @@ models_to_create.each do |m|
   # not nullable columns
   DB.schema(m).each do |c|
     info = c[1]
-    list_of_not_nullable_cols.push(c[0]) unless info[:allow_null] or info[:primary_key]
+    list_of_not_nullable_cols.push(c[0]) unless info[:allow_null] or info[:primary_key] or info[:default]
   end
 
   # Unique columns
@@ -186,7 +190,7 @@ init = createfile("init.rb")
 if !init.nil?
   writeheader(init, "include file to access all models")
   init.puts "require 'sequel'\n"
-  init.puts "require_relative 'db_connect'\n"
+  init.puts "require_relative '" + db_connect + "'\n"
   init.puts "# MODELS"
   models_to_create.each do |m|
     init.puts "require_relative '#{m}'"
